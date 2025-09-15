@@ -118,3 +118,22 @@ app.use('/api/book-table', bookTableRoutes);
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
 });
+
+
+// Run every hour (or daily)
+setInterval(async () => {
+  try {
+    const now = new Date();
+
+    // Delete all bookings where the date is **before now**
+    const result = await TableBooking.deleteMany({
+      date: { $lt: now } // booking date already passed
+    });
+
+    if (result.deletedCount > 0) {
+      console.log(`Deleted ${result.deletedCount} past bookings.`);
+    }
+  } catch (err) {
+    console.error("Error deleting past bookings:", err);
+  }
+}, 1000 * 60 * 60); // every hour    delte the documents after one hour
