@@ -6,7 +6,7 @@ import { keyframes } from '@emotion/react';
 import ScrollTrigger from 'react-scroll-trigger';
 import { TableRestaurant, Star, RestaurantMenu, Fastfood } from '@mui/icons-material';
 import FeedbackSection from "./FeedbackSection";
-
+import { useAuth } from "../Context/AuthContext";
 // Keyframes for animations
 const slideInLeft = keyframes`
     from { transform: translateX(-100%); opacity: 0; }
@@ -52,9 +52,18 @@ const Home = () => {
     const [inView, setInView] = useState(false);
     const [trigger1, setTrigger1] = useState(false);
     const [trigger2, setTrigger2] = useState(false);
+    const { user, isNewUser } = useAuth();   
 
     return (
         <>
+
+                   {/* 🎉 New User Discount Banner */}
+{isNewUser && (
+  <Box sx={{ backgroundColor: "#94e173ff", color: "#000", py: 2, textAlign: "center", fontWeight: "bold", fontSize: "1.2rem" }}>
+    🎉 Welcome {user?.username}! Enjoy 10% OFF on menu items for first booking!
+  </Box>
+)} 
+
             {/* Hero Section */}
             <Box sx={{ position: 'relative', height: '100vh', backgroundImage: `url(${require('../assets/bg2.jpg')})`, backgroundSize: 'cover', backgroundPosition: 'center', display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'white', textAlign: 'center', overflow: 'hidden' }}>
                 <Box sx={{ position: 'absolute', top: 0, left: 0, right: 0, bottom: 0, background: 'rgba(0, 0, 0, 0.4)' }} />
@@ -120,7 +129,76 @@ const Home = () => {
                 </Container>
             </Box>
 
-            {/* About Us Section */}
+          
+  
+            {/* Featured Dishes Section */}
+            <Box sx={{ py: 8, backgroundColor: '#212121', color: 'white' }}>
+                <Container>
+                    <Typography variant="h4" sx={{ fontFamily: 'Cinzel, serif', fontWeight: 'bold', color: '#FFEB3B', textAlign: 'center', position: 'relative', mb: 4, '&:before': { content: '""', position: 'absolute', width: '60%', height: '4px', backgroundColor: '#FF5722', bottom: '-10px', left: '20%' } }}>
+                        Featured Dishes
+                    </Typography>
+                    <Grid container spacing={4} justifyContent="center">
+                        {[1, 2, 3].map((index) => (
+                            <Grid item xs={12} sm={6} md={4} key={index}>
+                                <ScrollTrigger onEnter={() => setInView(true)} onExit={() => setInView(false)}>
+                                    <DishPaper elevation={5} sx={{ p: 2, animation: inView ? `${slideInRight} 0.8s ease-out` : 'none', opacity: inView ? 1 : 0 }}>
+                                        <img src={require(`../assets/dish${index}.jpg`)} alt={`Dish ${index}`} style={{ width: '100%', borderRadius: '8px' }} />
+                                        <Typography variant="h6" sx={{ mt: 2 }}>Dish Name {index}</Typography>
+                                        <Typography variant="body1" sx={{ mt: 1 }}>Description of Dish {index}</Typography>
+                                        <Typography variant="subtitle1" sx={{ mt: 1 }}>RS:{index * 200+50}.00</Typography>
+                                    </DishPaper>
+                                </ScrollTrigger>
+                            </Grid>
+                        ))}
+                    </Grid>
+                </Container>
+            </Box>
+
+
+
+             {/* Events & Offers Section */}
+            <Box sx={{ py: 8, backgroundColor: '#222', color: 'white' }}>
+                <Container>
+                    <Typography variant="h4" sx={{ fontFamily: 'Cinzel, serif', fontWeight: 'bold', color: '#FFEB3B', textAlign: 'center', position: 'relative', mb: 4, '&:before': { content: '""', position: 'absolute', width: '60%', height: '4px', backgroundColor: '#FF5722', bottom: '-10px', left: '20%' } }}>
+                        Upcoming Events & Special Offers
+                    </Typography>
+                    <Grid container spacing={4} justifyContent="center">
+                        <Grid item xs={12} md={6}>
+                            <ScrollTrigger onEnter={() => setTrigger1(true)} onExit={() => setTrigger1(false)}>
+                                <Paper elevation={6} sx={{ p: 4, textAlign: 'center', backgroundImage: 'linear-gradient(145deg, #555, #333)', borderRadius: '12px', animation: trigger1 ? `${moveFromBottomToTop} 1s ease-out` : 'none', color: '#FFEB3B' }}>
+                                    <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Cinzel, serif', fontWeight: 'bold' }}>
+                                        Drinks Tasting Night - September 25th
+                                    </Typography>
+                                    <Typography variant="body1">Join us for an exclusive wine tasting event featuring selections from around the world.</Typography>
+                                </Paper>
+                            </ScrollTrigger>
+                        </Grid>
+                        <Grid item xs={12} md={6}>
+                            <ScrollTrigger onEnter={() => setTrigger2(true)} onExit={() => setTrigger2(false)}>
+                                <Paper elevation={6} sx={{ p: 4, textAlign: 'center', backgroundImage: 'linear-gradient(145deg, #555, #333)', borderRadius: '12px', animation: trigger2 ? `${moveFromBottomToTop} 1s ease-out` : 'none', color: '#FFEB3B' }}>
+                                    <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Cinzel, serif', fontWeight: 'bold' }}>
+                                        Winter Special - 20% Off All Tables
+                                    </Typography>
+                                    <h1>Welcome {user?.username}</h1>
+                                </Paper>
+                            </ScrollTrigger>
+                        </Grid>
+                    </Grid>
+                </Container>
+            </Box>
+
+
+
+             {/* Feedback Section  */}
+            <FeedbackSection />
+
+
+
+
+
+
+
+              {/* About Us Section */}
             <Box sx={{ py: 8, backgroundColor: '#212121', color: 'white', position: 'relative', overflow: 'hidden' }}>
                 <Container>
                     <AnimatedBox sx={{ textAlign: 'center', mb: 6 }}>
@@ -147,62 +225,7 @@ const Home = () => {
                     </Grid>
                 </Container>
             </Box>
-
-            {/* Featured Dishes Section */}
-            <Box sx={{ py: 8, backgroundColor: '#212121', color: 'white' }}>
-                <Container>
-                    <Typography variant="h4" sx={{ fontFamily: 'Cinzel, serif', fontWeight: 'bold', color: '#FFEB3B', textAlign: 'center', position: 'relative', mb: 4, '&:before': { content: '""', position: 'absolute', width: '60%', height: '4px', backgroundColor: '#FF5722', bottom: '-10px', left: '20%' } }}>
-                        Featured Dishes
-                    </Typography>
-                    <Grid container spacing={4} justifyContent="center">
-                        {[1, 2, 3].map((index) => (
-                            <Grid item xs={12} sm={6} md={4} key={index}>
-                                <ScrollTrigger onEnter={() => setInView(true)} onExit={() => setInView(false)}>
-                                    <DishPaper elevation={5} sx={{ p: 2, animation: inView ? `${slideInRight} 0.8s ease-out` : 'none', opacity: inView ? 1 : 0 }}>
-                                        <img src={require(`../assets/dish${index}.jpg`)} alt={`Dish ${index}`} style={{ width: '100%', borderRadius: '8px' }} />
-                                        <Typography variant="h6" sx={{ mt: 2 }}>Dish Name {index}</Typography>
-                                        <Typography variant="body1" sx={{ mt: 1 }}>Description of Dish {index}</Typography>
-                                        <Typography variant="subtitle1" sx={{ mt: 1 }}>RS:{index * 200+50}.00</Typography>
-                                    </DishPaper>
-                                </ScrollTrigger>
-                            </Grid>
-                        ))}
-                    </Grid>
-                </Container>
-            </Box>
-             {/* Feedback Section  */}
-            <FeedbackSection />
-
-            {/* Events & Offers Section */}
-            <Box sx={{ py: 8, backgroundColor: '#222', color: 'white' }}>
-                <Container>
-                    <Typography variant="h4" sx={{ fontFamily: 'Cinzel, serif', fontWeight: 'bold', color: '#FFEB3B', textAlign: 'center', position: 'relative', mb: 4, '&:before': { content: '""', position: 'absolute', width: '60%', height: '4px', backgroundColor: '#FF5722', bottom: '-10px', left: '20%' } }}>
-                        Upcoming Events & Special Offers
-                    </Typography>
-                    <Grid container spacing={4} justifyContent="center">
-                        <Grid item xs={12} md={6}>
-                            <ScrollTrigger onEnter={() => setTrigger1(true)} onExit={() => setTrigger1(false)}>
-                                <Paper elevation={6} sx={{ p: 4, textAlign: 'center', backgroundImage: 'linear-gradient(145deg, #555, #333)', borderRadius: '12px', animation: trigger1 ? `${moveFromBottomToTop} 1s ease-out` : 'none', color: '#FFEB3B' }}>
-                                    <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Cinzel, serif', fontWeight: 'bold' }}>
-                                        Drinks Tasting Night - September 25th
-                                    </Typography>
-                                    <Typography variant="body1">Join us for an exclusive wine tasting event featuring selections from around the world.</Typography>
-                                </Paper>
-                            </ScrollTrigger>
-                        </Grid>
-                        <Grid item xs={12} md={6}>
-                            <ScrollTrigger onEnter={() => setTrigger2(true)} onExit={() => setTrigger2(false)}>
-                                <Paper elevation={6} sx={{ p: 4, textAlign: 'center', backgroundImage: 'linear-gradient(145deg, #555, #333)', borderRadius: '12px', animation: trigger2 ? `${moveFromBottomToTop} 1s ease-out` : 'none', color: '#FFEB3B' }}>
-                                    <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Cinzel, serif', fontWeight: 'bold' }}>
-                                        Winter Special - 20% Off All Tables
-                                    </Typography>
-                                    <Typography variant="body1">Enjoy a 20% discount on all appetizers throughout the winter. Join with your friends and family!</Typography>
-                                </Paper>
-                            </ScrollTrigger>
-                        </Grid>
-                    </Grid>
-                </Container>
-            </Box>
+          
 
             {/* Footer */}
             <Box sx={{ py: 4, backgroundColor: '#111', color: 'white', textAlign: 'center' }}>

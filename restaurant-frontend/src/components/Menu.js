@@ -74,7 +74,9 @@ const ItemImg = styled("img")({
 
 const TableMenuPage = () => {
   
-     const { user, isAuthenticated } = useAuth();
+
+     const { user, isAuthenticated, isNewUser } = useAuth();
+
       const isAdmin = isAuthenticated && user?.role === "admin"; // ✅ check role
   const { tableId } = useParams();
   const navigate = useNavigate();
@@ -170,6 +172,23 @@ const TableMenuPage = () => {
 
   </div>
 )}
+       {isNewUser && (
+  <Paper
+    elevation={4}
+    sx={{
+      p: 2,
+      mb: 3,
+      backgroundColor: "#FFEB3B",
+      color: "#000",
+      textAlign: "center",
+      fontWeight: "bold",
+      borderRadius: "8px",
+    }}
+  >
+    🎉 Welcome {user?.username}! As a new user, you get{" "}
+    <span style={{ color: "#E64A19" }}>10% OFF</span> your first booking!
+  </Paper>
+)}
 
       {sections.map((section) => {
         const title = section.title || section.name || "Section";
@@ -194,15 +213,29 @@ const TableMenuPage = () => {
   <Typography variant="body2" color="textSecondary">
     {item.description || "No description"}
   </Typography>
-  <Typography
-    variant="body1"
-    color="textPrimary"
-    sx={{ fontWeight: "bold", marginTop: 1 }}
-  >
-    {typeof item.price === "number"
-      ? `$${item.price}`
-      : item.price || "No price"}
-  </Typography>
+ <Typography
+  variant="body1"
+  color="textPrimary"
+  sx={{ fontWeight: "bold", marginTop: 1 }}
+>
+  {typeof item.price === "number" ? (
+    isNewUser ? (
+      <>
+        <span style={{ textDecoration: "line-through", color: "gray", marginRight: 8 }}>
+          RS:{item.price}
+        </span>
+        <span style={{ color: "#E64A19" }}>
+          RS:{(item.price * 0.9).toFixed(0)} {/* 10% off */}
+        </span>
+      </>
+    ) : (
+      `RS:${item.price}`
+    )
+  ) : (
+    item.price || "No price"
+  )}
+</Typography>
+
  {isAdmin && (
   <IconButton
     color="error"

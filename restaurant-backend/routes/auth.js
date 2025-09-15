@@ -30,11 +30,18 @@ router.post("/signup", async (req, res) => {
       { expiresIn: "1h" }
     );
 
-    res.json({
-      msg: "User registered successfully",
-      token,
-      user: { id: newUser._id, username, email, role: newUser.role }
-    });
+   res.json({
+  msg: "User registered successfully",
+  token,
+  user: { 
+    id: newUser._id, 
+    username, 
+    email, 
+    role: newUser.role,
+    isNewUser: newUser.isNewUser   // 👈 add this
+  }
+});
+
   } catch (err) {
     res.status(500).json({ error: err.message });
   }
@@ -59,8 +66,15 @@ router.post("/signin", async (req, res) => {
 
 res.json({ 
   token, 
-  user: { id: user._id, username: user.username, email: user.email, role: user.role } 
+  user: { 
+    id: user._id, 
+    username: user.username, 
+    email: user.email, 
+    role: user.role,
+    isNewUser: user.isNewUser    // 👈 add this
+  } 
 });
+
 
   } catch (err) {
     res.status(500).json({ error: err.message });

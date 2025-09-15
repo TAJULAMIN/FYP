@@ -6,7 +6,7 @@ import { keyframes } from '@emotion/react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-
+import { useAuth } from "../Context/AuthContext"; // ✅ import
 // Animation
 const slideIn = keyframes`
   from { transform: translateX(-100%); opacity: 0; }
@@ -49,6 +49,7 @@ const ButtonContainer = styled(Box)(({ theme }) => ({
 }));
 
 export default function BookTable() {
+  const { setUser } = useAuth(); // ✅ get setUser from AuthContext
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -146,13 +147,20 @@ export default function BookTable() {
       {
         headers: {
           Authorization: `Bearer ${token}`, // ✅ fix added
+          validateStatus: () => true, // ✅ stops axios from auto-throwing
         },
       }
     );
 
     toast.success("Table booked successfully!");
+        // ✅ Update user in localStorage & AuthContext
+    if (response.data.user) {
+      localStorage.setItem("user", JSON.stringify(response.data.user));
+      setUser(response.data.user); // 🔥 instantly updates everywhere
+    }
     setFormData({ name: "", email: "", date: "", time: "", guests: "", branch: "" });
     setErrors({});
+
     console.log("Booking response:", response.data);
   } catch (error) {
     console.error("Error booking the table:", error.response || error);

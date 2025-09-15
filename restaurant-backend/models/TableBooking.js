@@ -8,6 +8,11 @@ const TableBookingSchema = new mongoose.Schema({
   time: String,
   guests: Number,
   branch: String,
+    // 🔹 Discount tracking
+  discountApplied: { type: Boolean, default: false },
+
+  // (Optional) If you want pricing
+  totalPrice: { type: Number },
   createdAt: { type: Date, default: Date.now }
 });
 

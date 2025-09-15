@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const TableBooking = require("../models/TableBooking");
+const User = require("../models/User");  // ✅ make sure to import User model
 const { verifyToken, verifyAdmin } = require("../middleware/auth");
 
 /**
@@ -10,34 +11,53 @@ const { verifyToken, verifyAdmin } = require("../middleware/auth");
  */
 
 // POST - Book a table (attach userId automatically)
+// POST - Book a table (with first-time discount logic)
 router.post("/", verifyToken, async (req, res) => {
   try {
-    // Make sure req.user exists
     console.log("Logged-in user:", req.user);
 
-    // Attach logged-in user ID
+    // 1️⃣ Find the user from DB
+    const user = await User.findById(req.user.id);
+    if (!user) return res.status(404).json({ msg: "User not found" });
+
+    let discountApplied = false;
+    let finalPrice = req.body.totalPrice || 0; // optional if you track price
+
+    // 2️⃣ Apply discount if first-time user
+    if (user.isNewUser) {
+      discountApplied = true;
+      finalPrice = finalPrice * 0.9; // 10% off
+       user.isNewUser = false;        // ✅ disable future discount
+      await user.save();
+    }
+
+    // 3️⃣ Attach booking data
     const bookingData = {
       ...req.body,
-      userId: req.user.id || req.user._id, // Use the correct field from your JWT
+      userId: user._id,
+      discountApplied,
+      totalPrice: finalPrice,
     };
 
-    console.log("Incoming booking data with userId:", bookingData);
+    console.log("Incoming booking data with userId & discount:", bookingData);
 
-    // Create new booking with userId
+    // 4️⃣ Save booking
     const newBooking = new TableBooking(bookingData);
-
-    // Save to database
     const savedBooking = await newBooking.save();
     console.log("Booking saved successfully:", savedBooking);
 
-    // Send response
-    res.status(201).json({ message: "Table booked!", booking: savedBooking });
+    // 5️⃣ Respond
+    res.status(201).json({
+      message: "Table booked!",
+      booking: savedBooking,
+      discountApplied,
+      user, // 🔹 send updated user with isNewUser=false
+    });
   } catch (err) {
     console.error("Error saving booking:", err);
     res.status(400).json({ error: err.message, details: err.errors });
   }
 });
-
 
 // GET - Fetch reservations for a specific user
 router.get("/user/:userId", async (req, res) => {
