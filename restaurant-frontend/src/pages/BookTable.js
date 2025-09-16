@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Typography, Box, TextField, Button, Grid, MenuItem } from '@mui/material';
 import { styled } from '@mui/material/styles';
 import { Link } from 'react-router-dom';
@@ -6,9 +6,7 @@ import { keyframes } from '@emotion/react';
 import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
-import { useAuth } from "../Context/AuthContext"; // ✅ import
-  import { useEffect } from 'react';
-
+import { useAuth } from "../Context/AuthContext";
 
 // Animation
 const slideIn = keyframes`
@@ -52,57 +50,46 @@ const ButtonContainer = styled(Box)(({ theme }) => ({
 }));
 
 export default function BookTable() {
-  const { setUser } = useAuth(); // ✅ get setUser from AuthContext
+  const { user } = useAuth(); // Logged-in user
   const [availableTables, setAvailableTables] = useState([]);
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
+     name: user?.username || '',
+  email: user?.email || '',
     date: '',
     time: '',
     guests: '',
     branch: '',
-      tableNumber: '', // ✅ add this
+    tableNumber: '',
   });
   const [errors, setErrors] = useState({});
 
+  // Fetch available tables when date/time changes
+  useEffect(() => {
+    const fetchAvailableTables = async () => {
+      if (!formData.date || !formData.time) return;
+      try {
+        const res = await axios.get('http://localhost:5000/api/book-table/availability', {
+          params: { date: formData.date, time: formData.time },
+        });
+        setAvailableTables(res.data);
+      } catch (err) {
+        console.error("Error fetching available tables:", err);
+      }
+    };
+    fetchAvailableTables();
+  }, [formData.date, formData.time]);
 
-useEffect(() => {
-  const fetchAvailableTables = async () => {
-    if (!formData.date || !formData.time) return;
-
-    try {
-      const res = await axios.get('http://localhost:5000/api/book-table/availability', {
-        params: { date: formData.date, time: formData.time },
-      });
-
-      // Only keep available tables
-   setAvailableTables(res.data); // don't filter by status
-
-    } catch (err) {
-      console.error("Error fetching available tables:", err);
-    }
-  };
-
-  fetchAvailableTables();
-}, [formData.date, formData.time]);
-
-
+  // Handle form changes
   const handleChange = ({ target: { name, value } }) => {
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({ ...prev, [name]: value }));
     validateField(name, value);
   };
 
+  // Validation
   const validateField = (name, value) => {
-    setErrors((prevErrors) => {
+    setErrors(prevErrors => {
       const newErrors = { ...prevErrors };
-
       switch (name) {
-        case 'name':
-          newErrors.name = value.length <= 50 ? '' : 'Name should not exceed 50 characters.';
-          break;
-        case 'email':
-          newErrors.email = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value) ? '' : 'Invalid email address.';
-          break;
         case 'date':
           newErrors.date = value >= new Date().toISOString().split('T')[0] ? '' : 'Date cannot be in the past.';
           break;
@@ -115,128 +102,122 @@ useEffect(() => {
         case 'branch':
           newErrors.branch = value ? '' : 'Please select a branch.';
           break;
+        case 'tableNumber':
+          newErrors.tableNumber = value ? '' : 'Please select a table.';
+          break;
         default:
           break;
       }
-
       return newErrors;
     });
   };
 
-
-
-  
+  // Handle booking submission
   const handleSubmit = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  // Validate all fields
-  const validationErrors = {
-    name: formData.name
-      ? formData.name.length > 50
-        ? "Name should not exceed 50 characters."
-        : ""
-      : "Name is required.",
-    email: /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)
-      ? ""
-      : "Invalid email address.",
-    date: formData.date >= new Date().toISOString().split("T")[0]
-      ? ""
-      : "Date cannot be in the past.",
-    time: formData.time ? "" : "Time is required.",
-    guests:
-      formData.guests >= 1 && formData.guests <= 20
-        ? ""
-        : "Guests should be between 1 and 20.",
-         
-    branch: formData.branch ? "" : "Please select a branch.",
-      tableNumber: formData.tableNumber ? "" : "Please select a table.", // ✅ add this
-  };
+    // Check for errors
+    const validationErrors = {
+      date: formData.date >= new Date().toISOString().split("T")[0] ? "" : "Date cannot be in the past.",
+      time: formData.time ? "" : "Time is required.",
+      guests: (formData.guests >= 1 && formData.guests <= 20) ? "" : "Guests should be between 1 and 20.",
+      branch: formData.branch ? "" : "Please select a branch.",
+      tableNumber: formData.tableNumber ? "" : "Please select a table.",
+    };
 
-  if (Object.values(validationErrors).some((error) => error)) {
-    setErrors(validationErrors);
-    return;
-  }
+    if (Object.values(validationErrors).some(error => error)) {
+      setErrors(validationErrors);
+      return;
+    }
 
-  try {
     const token = localStorage.getItem("token");
     if (!token) {
       toast.error("You must be logged in to book a table.");
       return;
     }
 
-    const payload = {
-      name: formData.name,
-      email: formData.email,
-      tableNumber: formData.tableNumber, // ✅ send the selected table
-      date: new Date(formData.date),
-      time: formData.time,
-      guests: Number(formData.guests),
-      branch: formData.branch,
-    };
+    try {
+      const payload = {
+          name: user?.username, 
+        email: user?.email,   
+        tableNumber: formData.tableNumber,
+        date: new Date(formData.date),
+        time: formData.time,
+        guests: Number(formData.guests),
+        branch: formData.branch,
+      };
 
-    const response = await axios.post(
-      "http://localhost:5000/api/book-table",
-      payload,
-      {
-        headers: {
-          Authorization: `Bearer ${token}`, // ✅ fix added
-          validateStatus: () => true, // ✅ stops axios from auto-throwing
-        },
-      }
-    );
+      const response = await axios.post(
+        "http://localhost:5000/api/book-table",
+        payload,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-    toast.success("Table booked successfully!");
-        // ✅ Update user in localStorage & AuthContext
-    if (response.data.user) {
-      localStorage.setItem("user", JSON.stringify(response.data.user));
-      setUser(response.data.user); // 🔥 instantly updates everywhere
+      toast.success("Table booked successfully!");
+      setFormData({ date: "", time: "", guests: "", branch: "", tableNumber: "" });
+      setErrors({});
+      console.log("Booking response:", response.data);
+    } catch (error) {
+      console.error("Error booking the table:", error.response || error);
+      toast.error(error.response?.data?.error || "Error booking the table. Please try again.");
     }
-    setFormData({ name: "", email: "", date: "", time: "", guests: "", branch: "" });
-    setErrors({});
-
-    console.log("Booking response:", response.data);
-  } catch (error) {
-    console.error("Error booking the table:", error.response || error);
-    toast.error(
-      error.response?.data?.error || "Error booking the table. Please try again."
-    );
-  }
-};
-
-
-
-
+  };
 
   return (
     <>
+
+
+    
       <BackgroundBox>
         <FormContainer component="form" noValidate autoComplete="off" onSubmit={handleSubmit}>
+
+
+          
           <Typography variant="h4" align="center" gutterBottom sx={{ color: '#FF5722', mb: 3 }}>
             Book a Table
           </Typography>
+          
+        <Typography variant="subtitle1" sx={{ mb: 2 }}>
+  Booking as: {user?.username} ({user?.email})
+</Typography>
+
+
           <Grid container spacing={2}>
-            {['name', 'email'].map((field) => (
-              <Grid item xs={12} key={field}>
-                <TextField
-                  required
-                  fullWidth
-                  label={`Your ${field.charAt(0).toUpperCase() + field.slice(1)}`}
-                  name={field}
-                  type={field === 'email' ? 'email' : 'text'}
-                  value={formData[field]}
-                  onChange={handleChange}
-                  variant="outlined"
-                  error={!!errors[field]}
-                  helperText={errors[field]}
-                  sx={{ mb: 2 }}
-                />
-              </Grid>
-            ))}
-            
 
 
-            
-            {['date', 'time', 'guests'].map((field) => (
+
+{/* Name */}
+<Grid item xs={12}>
+  <TextField
+    label="Full Name"
+    name="name"
+    value={formData.name}
+    onChange={handleChange}
+    fullWidth
+    variant="outlined"
+    sx={{ mb: 2 }}
+  />
+</Grid>
+
+{/* Email */}
+<Grid item xs={12}>
+  <TextField
+    label="Email"
+    name="email"
+    value={formData.email}
+    onChange={handleChange}
+    fullWidth
+    variant="outlined"
+    sx={{ mb: 2 }}
+  />
+</Grid>
+
+
+
+
+            {['date', 'time', 'guests'].map(field => (
               <Grid item xs={12} sm={field === 'date' || field === 'time' ? 6 : 12} key={field}>
                 <TextField
                   required
@@ -254,8 +235,7 @@ useEffect(() => {
                 />
               </Grid>
             ))}
-        
-            {/* Branch Dropdown */}
+
             <Grid item xs={12}>
               <TextField
                 select
@@ -275,25 +255,24 @@ useEffect(() => {
             </Grid>
 
             <Grid item xs={12}>
-  <TextField
-    select
-    required
-    fullWidth
-    label="Select Table"
-    name="tableNumber"
-    value={formData.tableNumber}
-    onChange={handleChange}
-    error={!!errors.tableNumber}
-    helperText={errors.tableNumber}
-  >
-    {availableTables.map((table) => (
-      <MenuItem key={table._id} value={table.tableNumber}>
-        Table {table.tableNumber} (Capacity: {table.capacity})
-      </MenuItem>
-    ))}
-  </TextField>
-</Grid>
-  
+              <TextField
+                select
+                required
+                fullWidth
+                label="Select Table"
+                name="tableNumber"
+                value={formData.tableNumber}
+                onChange={handleChange}
+                error={!!errors.tableNumber}
+                helperText={errors.tableNumber}
+              >
+                {availableTables.map(table => (
+                  <MenuItem key={table._id} value={table.tableNumber}>
+                    Table {table.tableNumber} (Capacity: {table.capacity})
+                  </MenuItem>
+                ))}
+              </TextField>
+            </Grid>
           </Grid>
 
           <ButtonContainer>
@@ -315,7 +294,7 @@ useEffect(() => {
           </ButtonContainer>
         </FormContainer>
       </BackgroundBox>
-      <ToastContainer />
+      <ToastContainer position="top-right" />
     </>
   );
 }
