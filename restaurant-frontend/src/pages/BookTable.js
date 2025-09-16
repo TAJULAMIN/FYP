@@ -7,6 +7,7 @@ import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useAuth } from "../Context/AuthContext";
+import { useNavigate } from "react-router-dom"; // ✅ Add this at top
 
 // Animation
 const slideIn = keyframes`
@@ -52,6 +53,7 @@ const ButtonContainer = styled(Box)(({ theme }) => ({
 export default function BookTable() {
   const { user } = useAuth(); // Logged-in user
   const [availableTables, setAvailableTables] = useState([]);
+    const navigate = useNavigate(); // ✅ Initialize navigate
   const [formData, setFormData] = useState({
      name: user?.username || '',
   email: user?.email || '',
@@ -155,10 +157,16 @@ export default function BookTable() {
         }
       );
 
-      toast.success("Table booked successfully!");
+    
       setFormData({ date: "", time: "", guests: "", branch: "", tableNumber: "" });
       setErrors({});
       console.log("Booking response:", response.data);
+      // ✅ Show toast and navigate after it disappears
+      toast.success("Table booked successfully!", {
+        autoClose: 2000, // 2 seconds
+        onClose: () => navigate("/my-bookings"),
+      });
+
     } catch (error) {
       console.error("Error booking the table:", error.response || error);
       toast.error(error.response?.data?.error || "Error booking the table. Please try again.");
