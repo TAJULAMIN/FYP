@@ -134,13 +134,17 @@ const TableBookingList = () => {
                 <td>{b.tableNumber}</td> {/* ✅ display table number */}
               <td>{new Date(b.createdAt).toLocaleString()}</td>
               <td>
-                <Button
-                  variant="contained"
-                  sx={{ backgroundColor: "#FFA500", color: "white", "&:hover": { backgroundColor: "#E68900" }, marginRight: "5px" }}
-                  onClick={() => handleEdit(b)}
-                >
-                  Edit
-                </Button>
+             {/* Admin can edit only */}
+{user && user.role === "admin" && (
+  <Button
+    variant="contained"
+    sx={{ backgroundColor: "#FFA500", color: "white", "&:hover": { backgroundColor: "#E68900" }, marginRight: "5px" }}
+    onClick={() => handleEdit(b)}
+  >
+    Edit
+  </Button>
+)}
+
                 <Button
                   variant="contained"
                   sx={{ backgroundColor: "#FF5722", color: "white", "&:hover": { backgroundColor: "#E64A19" } }}
