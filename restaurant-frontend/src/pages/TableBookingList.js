@@ -117,6 +117,7 @@ const TableBookingList = () => {
             <th>Time</th>
             <th>Guests</th>
             <th>Branch</th>
+                  <th>Table Number</th> {/* ✅ new column */}
             <th>Created At</th>
             <th>Action</th>
           </tr>
@@ -130,6 +131,7 @@ const TableBookingList = () => {
               <td>{b.time}</td>
               <td>{b.guests}</td>
               <td>{b.branch}</td>
+                <td>{b.tableNumber}</td> {/* ✅ display table number */}
               <td>{new Date(b.createdAt).toLocaleString()}</td>
               <td>
                 <Button

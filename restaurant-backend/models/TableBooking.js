@@ -8,6 +8,7 @@ const TableBookingSchema = new mongoose.Schema({
   time: String,
   guests: Number,
   branch: String,
+  tableNumber: { type: Number, required: true }, // ✅ new
     // 🔹 Discount tracking
   discountApplied: { type: Boolean, default: false },
 

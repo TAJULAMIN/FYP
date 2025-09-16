@@ -7,6 +7,9 @@ import axios from 'axios';
 import { toast, ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 import { useAuth } from "../Context/AuthContext"; // ✅ import
+  import { useEffect } from 'react';
+
+
 // Animation
 const slideIn = keyframes`
   from { transform: translateX(-100%); opacity: 0; }
@@ -50,6 +53,7 @@ const ButtonContainer = styled(Box)(({ theme }) => ({
 
 export default function BookTable() {
   const { setUser } = useAuth(); // ✅ get setUser from AuthContext
+  const [availableTables, setAvailableTables] = useState([]);
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -57,8 +61,31 @@ export default function BookTable() {
     time: '',
     guests: '',
     branch: '',
+      tableNumber: '', // ✅ add this
   });
   const [errors, setErrors] = useState({});
+
+
+useEffect(() => {
+  const fetchAvailableTables = async () => {
+    if (!formData.date || !formData.time) return;
+
+    try {
+      const res = await axios.get('http://localhost:5000/api/book-table/availability', {
+        params: { date: formData.date, time: formData.time },
+      });
+
+      // Only keep available tables
+   setAvailableTables(res.data); // don't filter by status
+
+    } catch (err) {
+      console.error("Error fetching available tables:", err);
+    }
+  };
+
+  fetchAvailableTables();
+}, [formData.date, formData.time]);
+
 
   const handleChange = ({ target: { name, value } }) => {
     setFormData((prev) => ({ ...prev, [name]: value }));
@@ -96,6 +123,9 @@ export default function BookTable() {
     });
   };
 
+
+
+  
   const handleSubmit = async (e) => {
   e.preventDefault();
 
@@ -117,7 +147,9 @@ export default function BookTable() {
       formData.guests >= 1 && formData.guests <= 20
         ? ""
         : "Guests should be between 1 and 20.",
+         
     branch: formData.branch ? "" : "Please select a branch.",
+      tableNumber: formData.tableNumber ? "" : "Please select a table.", // ✅ add this
   };
 
   if (Object.values(validationErrors).some((error) => error)) {
@@ -135,6 +167,7 @@ export default function BookTable() {
     const payload = {
       name: formData.name,
       email: formData.email,
+      tableNumber: formData.tableNumber, // ✅ send the selected table
       date: new Date(formData.date),
       time: formData.time,
       guests: Number(formData.guests),
@@ -170,6 +203,10 @@ export default function BookTable() {
   }
 };
 
+
+
+
+
   return (
     <>
       <BackgroundBox>
@@ -195,7 +232,10 @@ export default function BookTable() {
                 />
               </Grid>
             ))}
+            
 
+
+            
             {['date', 'time', 'guests'].map((field) => (
               <Grid item xs={12} sm={field === 'date' || field === 'time' ? 6 : 12} key={field}>
                 <TextField
@@ -214,7 +254,7 @@ export default function BookTable() {
                 />
               </Grid>
             ))}
-
+        
             {/* Branch Dropdown */}
             <Grid item xs={12}>
               <TextField
@@ -233,6 +273,27 @@ export default function BookTable() {
                 <MenuItem value="Lahore">Lahore</MenuItem>
               </TextField>
             </Grid>
+
+            <Grid item xs={12}>
+  <TextField
+    select
+    required
+    fullWidth
+    label="Select Table"
+    name="tableNumber"
+    value={formData.tableNumber}
+    onChange={handleChange}
+    error={!!errors.tableNumber}
+    helperText={errors.tableNumber}
+  >
+    {availableTables.map((table) => (
+      <MenuItem key={table._id} value={table.tableNumber}>
+        Table {table.tableNumber} (Capacity: {table.capacity})
+      </MenuItem>
+    ))}
+  </TextField>
+</Grid>
+  
           </Grid>
 
           <ButtonContainer>

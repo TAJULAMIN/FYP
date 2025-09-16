@@ -48,8 +48,10 @@ const TablesListPage = () => {
     />
   )}
   <Typography variant="h6">Table {table.tableNumber}</Typography>
-  <Typography>Capacity: {table.capacity}</Typography>
-  <Typography>Status: {table.status}</Typography>
+<Typography variant="body1" sx={{ fontWeight: "bold" }}>
+  Capacity: {table.capacity} | Status: {table.status}
+</Typography>
+
 </Paper>
 
 

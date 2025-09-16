@@ -3,6 +3,7 @@ const router = express.Router();
 const TableBooking = require("../models/TableBooking");
 const User = require("../models/User");  // ✅ make sure to import User model
 const { verifyToken, verifyAdmin } = require("../middleware/auth");
+const Table = require("../models/Table");
 
 /**
  * =========================
@@ -29,6 +30,18 @@ router.post("/", verifyToken, async (req, res) => {
       finalPrice = finalPrice * 0.9; // 10% off
        user.isNewUser = false;        // ✅ disable future discount
       await user.save();
+    }
+
+
+    const { tableNumber, date, time } = req.body;
+    // ✅ Prevent double booking for the same table at the same date/time
+    const existingBooking = await TableBooking.findOne({
+      tableNumber,
+      date: new Date(date),
+      time,
+    });
+        if (existingBooking) {
+      return res.status(400).json({ error: `Table ${tableNumber} is already booked at this time.` });
     }
 
     // 3️⃣ Attach booking data
@@ -59,6 +72,46 @@ router.post("/", verifyToken, async (req, res) => {
   }
 });
 
+
+
+// GET available tables
+router.get("/availability", async (req, res) => {
+  try {
+    const { date, time } = req.query;
+    if (!date || !time) return res.status(400).json({ error: "Date and time are required" });
+
+    // Get all tables
+    const allTables = await Table.find();
+
+    // Compute start and end of day
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    // Get booked tables for that date & time
+    const bookedTables = await TableBooking.find({
+      date: { $gte: startOfDay, $lte: endOfDay },
+      time, // assuming time is stored as a string like "18:00"
+    }).select("tableNumber");
+
+    const bookedTableNumbers = bookedTables.map((b) => b.tableNumber);
+
+    // Filter available tables
+    const availableTables = allTables.filter(
+      (table) => !bookedTableNumbers.includes(table.tableNumber)
+    );
+
+    res.json(availableTables);
+  } catch (err) {
+    console.error("Error fetching available tables:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
+
+
 router.get("/user/reservations", verifyToken, async (req, res) => {
   try {
     const userId = req.user.id; // ✅ from JWT payload
@@ -81,6 +134,8 @@ router.get("/admin/reservations", verifyToken, verifyAdmin, async (req, res) => 
   const bookings = await TableBooking.find();
   res.json(bookings);
 });
+
+
 
 
 // DELETE - Remove a booking (Admin only)
