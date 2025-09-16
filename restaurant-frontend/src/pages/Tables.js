@@ -1,14 +1,13 @@
 import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { Container, Typography, Grid, Paper, Button } from "@mui/material";
-import { useAuth } from "../Context/AuthContext"; // ✅ NEW
-
+import { Container, Typography, Grid, Paper, Button, Box } from "@mui/material";
+import { useAuth } from "../Context/AuthContext";
 
 const TablesListPage = () => {
   const [tables, setTables] = useState([]);
   const navigate = useNavigate();
-  const { user } = useAuth(); // ✅ NEW
+  const { user } = useAuth();
 
   useEffect(() => {
     const fetchTables = async () => {
@@ -19,7 +18,12 @@ const TablesListPage = () => {
         console.error(err);
       }
     };
+
     fetchTables();
+
+    // Optional: refresh every 1 minute to update table status in real-time
+    const interval = setInterval(fetchTables, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   return (
@@ -35,56 +39,80 @@ const TablesListPage = () => {
         {tables.map((table) => (
           <Grid item xs={12} sm={6} md={4} key={table._id}>
             <Paper
-  sx={{ p: 3, borderRadius: "12px", cursor: "pointer" }}
-  onClick={() => 
-  navigate(`/tables/${table._id}/menu`, { state: { tableNumber: table.tableNumber } })
-}
->
-  {table.image && (
-    <img
-      src={`http://localhost:5000/${table.image}`}
-      alt={`Table ${table.tableNumber}`}
-      style={{ width: "100%", maxHeight: "150px", objectFit: "cover", borderRadius: "8px", marginBottom: "10px" }}
-    />
-  )}
-  <Typography variant="h6">Table {table.tableNumber}</Typography>
-<Typography variant="body1" sx={{ fontWeight: "bold" }}>
-  Capacity: {table.capacity} | Status: {table.status}
-</Typography>
+              sx={{
+                p: 3,
+                borderRadius: "12px",
+                cursor: table.status === "available" ? "pointer" : "not-allowed",
+                border: table.status === "booked" ? "2px solid red" : "2px solid green",
+                backgroundColor: table.status === "booked" ? "#ffe6e6" : "#e6ffe6",
+                position: "relative",
+                opacity: table.status === "booked" ? 0.7 : 1,
+              }}
+              onClick={() =>
+                table.status === "available" &&
+                navigate(`/tables/${table._id}/menu`, { state: { tableNumber: table.tableNumber } })
+              }
+            >
+              {/* Status Badge */}
+              <Box
+                sx={{
+                  position: "absolute",
+                  top: 10,
+                  right: 10,
+                  px: 1.5,
+                  py: 0.5,
+                  borderRadius: "8px",
+                  color: "#fff",
+                  fontWeight: "bold",
+                  backgroundColor: table.status === "booked" ? "red" : "green",
+                  fontSize: "0.8rem",
+                }}
+              >
+                {table.status === "booked" ? "BOOKED NOW" : "AVAILABLE NOW"}
+              </Box>
 
-</Paper>
-
-
+              {table.image && (
+                <img
+                  src={`http://localhost:5000/${table.image}`}
+                  alt={`Table ${table.tableNumber}`}
+                  style={{ width: "100%", maxHeight: "150px", objectFit: "cover", borderRadius: "8px", marginBottom: "10px" }}
+                />
+              )}
+              <Typography variant="h6">Table {table.tableNumber}</Typography>
+              <Typography variant="body1" sx={{ fontWeight: "bold" }}>
+                Capacity: {table.capacity}
+              </Typography>
+            </Paper>
           </Grid>
         ))}
 
-        {/* ➕ Create Table Button at the end */}
-       {user?.role === "admin" && (
-  <Grid item xs={12} sm={6} md={4}>
-    <Paper
-      sx={{
-        p: 4, // same as table cards
-        borderRadius: "12px",
-        textAlign: "center",
-        border: "2px dashed #FF5722",
-        cursor: "pointer",
-        display: "flex",
-        flexDirection: "column",
-        justifyContent: "center",
-        alignItems: "center",
-        minHeight: 220, // roughly match table card height (image + content)
-      }}
-      onClick={() => navigate("/tables/create")}
-    >
-      <Button
-        variant="contained"
-        sx={{ backgroundColor: "#FF5722", px: 3, py: 1 }} // smaller button
-      >
-        ➕ Create New Table
-      </Button>
-    </Paper>
-  </Grid>
-)}
+        {/* ➕ Create Table Button */}
+        {user?.role === "admin" && (
+          <Grid item xs={12} sm={6} md={4}>
+            <Paper
+              sx={{
+                p: 4,
+                borderRadius: "12px",
+                textAlign: "center",
+                border: "2px dashed #FF5722",
+                cursor: "pointer",
+                display: "flex",
+                flexDirection: "column",
+                justifyContent: "center",
+                alignItems: "center",
+                minHeight: 220,
+              }}
+              onClick={() => navigate("/tables/create")}
+            >
+              <Button
+                variant="contained"
+                sx={{ backgroundColor: "#FF5722", px: 3, py: 1 }}
+              >
+                ➕ Create New Table
+              </Button>
+            </Paper>
+          </Grid>
+        )}
       </Grid>
     </Container>
   );
