@@ -59,10 +59,10 @@ router.post("/", verifyToken, async (req, res) => {
   }
 });
 
-// GET - Fetch reservations for a specific user
-router.get("/user/:userId", async (req, res) => {
+router.get("/user/reservations", verifyToken, async (req, res) => {
   try {
-    const reservations = await TableBooking.find({ userId: req.params.userId });
+    const userId = req.user.id; // ✅ from JWT payload
+    const reservations = await TableBooking.find({ userId });
 
     if (reservations.length > 0) {
       res.json({ reservationExists: true, reservations });
@@ -74,6 +74,7 @@ router.get("/user/:userId", async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
 
 
 router.get("/admin/reservations", verifyToken, verifyAdmin, async (req, res) => {

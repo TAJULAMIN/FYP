@@ -4,12 +4,16 @@ import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../Context/AuthContext";
+
 
 const TableBookingList = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+  const { user, token } = useAuth();
+
 
   // Edit booking
   const handleEdit = (booking) => {
@@ -33,11 +37,10 @@ const TableBookingList = () => {
               }}
               onClick={async () => {
                 try {
-                  const token = localStorage.getItem("token");
-                  await axios.delete(
-                    `http://localhost:5000/api/bookings/${id}`,
-                    { headers: { Authorization: `Bearer ${token}` } }
-                  );
+                 await axios.delete(
+  `http://localhost:5000/api/bookings/${id}`,
+  { headers: { Authorization: `Bearer ${token}` } }
+);
                   setBookings((prev) => prev.filter((b) => b._id !== id));
                   toast.success("Booking deleted successfully!");
                   closeToast();
@@ -69,19 +72,17 @@ const TableBookingList = () => {
   // Fetch bookings
   useEffect(() => {
   const fetchBookings = async () => {
-    const token = localStorage.getItem("token");
-    const user = JSON.parse(localStorage.getItem("user"));
-
     if (!token || !user) {
-      navigate("/signin");
-      return;
-    }
+  navigate("/signin");
+  return;
+}
 
     try {
-      const url =
-        user.role === "admin"
-          ? "http://localhost:5000/api/bookings"
-          : `http://localhost:5000/api/bookings/user/${user.id}`;
+     const url =
+  user.role === "admin"
+    ? "http://localhost:5000/api/bookings/admin/reservations"
+    : "http://localhost:5000/api/bookings/user/reservations";
+
 
       const res = await axios.get(url, {
         headers: { Authorization: `Bearer ${token}` },
@@ -98,7 +99,7 @@ const TableBookingList = () => {
   };
 
   fetchBookings();
-}, [navigate]);
+}, [navigate, user, token]); // ✅ add user and token
 
   if (loading) return <p>Loading bookings...</p>;
   if (error) return <p style={{ color: "red" }}>{error}</p>;
