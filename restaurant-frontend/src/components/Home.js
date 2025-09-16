@@ -179,7 +179,7 @@ const Home = () => {
                                     <Typography variant="h6" gutterBottom sx={{ fontFamily: 'Cinzel, serif', fontWeight: 'bold' }}>
                                         Winter Special - 20% Off All Tables
                                     </Typography>
-                                    <h1>Welcome {user?.username}</h1>
+                                    <h1>Stay tunne for specisl offer </h1>
                                 </Paper>
                             </ScrollTrigger>
                         </Grid>
