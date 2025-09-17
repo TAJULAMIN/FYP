@@ -12,65 +12,85 @@ const Table = require("../models/Table");
  */
 
 // POST - Book a table (attach userId automatically)
-// POST - Book a table (with first-time discount logic)
+// POST - Book a table (with first-time discount logic + capacity check)
 router.post("/", verifyToken, async (req, res) => {
   try {
     console.log("Logged-in user:", req.user);
 
-    // 1️⃣ Find the user from DB
+    // 1️⃣ Find the user
     const user = await User.findById(req.user.id);
     if (!user) return res.status(404).json({ msg: "User not found" });
 
     let discountApplied = false;
-    let finalPrice = req.body.totalPrice || 0; // optional if you track price
+    let finalPrice = req.body.totalPrice || 0;
 
     // 2️⃣ Apply discount if first-time user
     if (user.isNewUser) {
       discountApplied = true;
       finalPrice = finalPrice * 0.9; // 10% off
-       user.isNewUser = false;        // ✅ disable future discount
+      user.isNewUser = false;
       await user.save();
     }
 
+    const { tableNumber, date, time, guests } = req.body;
 
-    const { tableNumber, date, time } = req.body;
-    // ✅ Prevent double booking for the same table at the same date/time
+    // 3️⃣ Find table and check capacity
+    const table = await Table.findOne({ tableNumber });
+    if (!table) {
+      return res.status(404).json({ error: `Table ${tableNumber} not found.` });
+    }
+
+    if (guests > table.capacity) {
+      return res.status(400).json({
+        error: `Table ${tableNumber} can only seat ${table.capacity} guests.`,
+      });
+    }
+
+    // 4️⃣ Prevent double booking
     const existingBooking = await TableBooking.findOne({
       tableNumber,
       date: new Date(date),
       time,
+      status: "active", // only count active bookings
     });
-        if (existingBooking) {
-      return res.status(400).json({ error: `Table ${tableNumber} is already booked at this time.` });
+
+    if (existingBooking) {
+      return res.status(400).json({
+        error: `Table ${tableNumber} is already booked at this time.`,
+      });
     }
 
-    // 3️⃣ Attach booking data
+    // 5️⃣ Save booking
     const bookingData = {
       ...req.body,
       userId: user._id,
       discountApplied,
       totalPrice: finalPrice,
+      status: "active",
     };
 
-    console.log("Incoming booking data with userId & discount:", bookingData);
-
-    // 4️⃣ Save booking
     const newBooking = new TableBooking(bookingData);
     const savedBooking = await newBooking.save();
-    console.log("Booking saved successfully:", savedBooking);
 
-    // 5️⃣ Respond
+    // 6️⃣ Update table status (optional)
+    await Table.updateOne(
+      { tableNumber },
+      { $set: { status: "booked" } }
+    );
+
+    // 7️⃣ Respond
     res.status(201).json({
       message: "Table booked!",
       booking: savedBooking,
       discountApplied,
-      user, // 🔹 send updated user with isNewUser=false
+      user,
     });
   } catch (err) {
     console.error("Error saving booking:", err);
     res.status(400).json({ error: err.message, details: err.errors });
   }
 });
+
 
 
 
