@@ -6,14 +6,12 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../Context/AuthContext";
 
-
 const TableBookingList = () => {
   const [bookings, setBookings] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const navigate = useNavigate();
   const { user, token } = useAuth();
-
 
   // Edit booking
   const handleEdit = (booking) => {
@@ -37,10 +35,10 @@ const TableBookingList = () => {
               }}
               onClick={async () => {
                 try {
-                 await axios.delete(
-  `http://localhost:5000/api/bookings/${id}`,
-  { headers: { Authorization: `Bearer ${token}` } }
-);
+                  await axios.delete(
+                    `http://localhost:5000/api/bookings/${id}`,
+                    { headers: { Authorization: `Bearer ${token}` } }
+                  );
                   setBookings((prev) => prev.filter((b) => b._id !== id));
                   toast.success("Booking deleted successfully!");
                   closeToast();
@@ -71,44 +69,54 @@ const TableBookingList = () => {
 
   // Fetch bookings
   useEffect(() => {
-  const fetchBookings = async () => {
-    if (!token || !user) {
-  navigate("/signin");
-  return;
-}
+    const fetchBookings = async () => {
+      if (!token || !user) {
+        
+        return;
+      }
 
-    try {
-     const url =
-  user.role === "admin"
-    ? "http://localhost:5000/api/bookings/admin/reservations"
-    : "http://localhost:5000/api/bookings/user/reservations";
+      try {
+        const url =
+          user.role === "admin"
+            ? "http://localhost:5000/api/bookings/admin/reservations"
+            : "http://localhost:5000/api/bookings/user/reservations";
 
+        const res = await axios.get(url, {
+          headers: { Authorization: `Bearer ${token}` },
+        });
 
-      const res = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
+        setBookings(Array.isArray(res.data) ? res.data : res.data.reservations || []);
+      } catch (err) {
+        console.error("Error fetching bookings:", err);
+        setError(err.response?.data?.message || "Failed to fetch bookings");
+      } finally {
+        setLoading(false);
+      }
+    };
 
-      // If res.data is array, use directly; otherwise, fallback
-      setBookings(Array.isArray(res.data) ? res.data : res.data.reservations || []);
-    } catch (err) {
-      console.error("Error fetching bookings:", err);
-      setError(err.response?.data?.message || "Failed to fetch bookings");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  fetchBookings();
-}, [navigate, user, token]); // ✅ add user and token
+    fetchBookings();
+  }, [navigate, user, token]);
 
   if (loading) return <p>Loading bookings...</p>;
   if (error) return <p style={{ color: "red" }}>{error}</p>;
   if (!bookings.length) return <p>No bookings found.</p>;
 
   return (
-    <div style={{ display: "flex", flexDirection: "column", alignItems: "center", marginTop: "20px" }}>
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        alignItems: "center",
+        marginTop: "20px",
+      }}
+    >
       <h1>All Bookings</h1>
-      <table style={{ borderCollapse: "collapse", width: "90%" }} border="5" cellPadding="10" cellSpacing="0">
+      <table
+        style={{ borderCollapse: "collapse", width: "90%" }}
+        border="5"
+        cellPadding="10"
+        cellSpacing="0"
+      >
         <thead>
           <tr>
             <th>Name</th>
@@ -117,7 +125,8 @@ const TableBookingList = () => {
             <th>Time</th>
             <th>Guests</th>
             <th>Branch</th>
-                  <th>Table Number</th> {/* ✅ new column */}
+            <th>Table Number</th>
+            <th>Status</th> {/* ✅ NEW column */}
             <th>Created At</th>
             <th>Action</th>
           </tr>
@@ -131,23 +140,44 @@ const TableBookingList = () => {
               <td>{b.time}</td>
               <td>{b.guests}</td>
               <td>{b.branch}</td>
-                <td>{b.tableNumber}</td> {/* ✅ display table number */}
+              <td>{b.tableNumber}</td>
+              <td
+                style={{
+                  fontWeight: "bold",
+                  color:
+                    b.status === "expired"
+                      ? "red"
+                      : b.status === "cancelled"
+                      ? "gray"
+                      : "green",
+                }}
+              >
+                {b.status || "active"}
+              </td>
               <td>{new Date(b.createdAt).toLocaleString()}</td>
               <td>
-             {/* Admin can edit only */}
-{user && user.role === "admin" && (
-  <Button
-    variant="contained"
-    sx={{ backgroundColor: "#FFA500", color: "white", "&:hover": { backgroundColor: "#E68900" }, marginRight: "5px" }}
-    onClick={() => handleEdit(b)}
-  >
-    Edit
-  </Button>
-)}
+                {user && user.role === "admin" && (
+                  <Button
+                    variant="contained"
+                    sx={{
+                      backgroundColor: "#FFA500",
+                      color: "white",
+                      "&:hover": { backgroundColor: "#E68900" },
+                      marginRight: "5px",
+                    }}
+                    onClick={() => handleEdit(b)}
+                  >
+                    Edit
+                  </Button>
+                )}
 
                 <Button
                   variant="contained"
-                  sx={{ backgroundColor: "#FF5722", color: "white", "&:hover": { backgroundColor: "#E64A19" } }}
+                  sx={{
+                    backgroundColor: "#FF5722",
+                    color: "white",
+                    "&:hover": { backgroundColor: "#E64A19" },
+                  }}
                   onClick={() => handleDelete(b._id)}
                 >
                   Delete

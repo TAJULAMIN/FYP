@@ -92,9 +92,11 @@ router.get("/availability", async (req, res) => {
 
     // Get booked tables for that date & time
     const bookedTables = await TableBooking.find({
-      date: { $gte: startOfDay, $lte: endOfDay },
-      time, // assuming time is stored as a string like "18:00"
-    }).select("tableNumber");
+  date: { $gte: startOfDay, $lte: endOfDay },
+  time,
+  status: "active", // ✅ only count active bookings
+}).select("tableNumber");
+
 
     const bookedTableNumbers = bookedTables.map((b) => b.tableNumber);
 
@@ -153,5 +155,16 @@ router.delete("/:id", verifyToken, async (req, res) => {
     res.status(500).json({ error: "Server error" });
   }
 });
+
+router.get("/expired", verifyToken, verifyAdmin, async (req, res) => {
+  try {
+    const expired = await TableBooking.find({ status: "expired" });
+    res.json(expired);
+  } catch (err) {
+    console.error("Error fetching expired bookings:", err);
+    res.status(500).json({ error: "Server error" });
+  }
+});
+
 
 module.exports = router;

@@ -1,21 +1,67 @@
-const mongoose = require('mongoose');
+const mongoose = require("mongoose");
 
-const TableBookingSchema = new mongoose.Schema({
-  userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
-  name: String,
-  email: String,
-  date: Date,
-  time: String,
-  guests: Number,
-  branch: String,
-  tableNumber: { type: Number, required: true }, // ✅ new
+const TableBookingSchema = new mongoose.Schema(
+  {
+    userId: { type: mongoose.Schema.Types.ObjectId, ref: "User", required: true },
+
+    name: {
+      type: String,
+      required: [true, "Name is required"],
+      trim: true,
+    },
+
+    email: {
+      type: String,
+      required: [true, "Email is required"],
+      trim: true,
+      lowercase: true,
+    },
+
+    date: {
+      type: Date,
+      required: [true, "Booking date is required"],
+    },
+
+    time: {
+      type: String,
+      required: [true, "Booking time is required"],
+    },
+
+    guests: {
+      type: Number,
+      required: true,
+      min: [1, "At least 1 guest is required"],
+    },
+
+    branch: {
+      type: String,
+      required: true,
+    },
+
+    tableNumber: {
+      type: Number,
+      required: true, // ✅ table is mandatory
+    },
+
     // 🔹 Discount tracking
-  discountApplied: { type: Boolean, default: false },
+    discountApplied: {
+      type: Boolean,
+      default: false,
+    },
 
-  // (Optional) If you want pricing
-  totalPrice: { type: Number },
-  createdAt: { type: Date, default: Date.now }
-});
+    // (Optional) Pricing
+    totalPrice: {
+      type: Number,
+    },
 
+    // 🔹 NEW: Booking status
+    status: {
+      type: String,
+      enum: ["active", "expired"],
+      default: "active",
+    },
+  },
+  { timestamps: true }
+);
 
-module.exports = mongoose.model('TableBooking', TableBookingSchema);
+module.exports = mongoose.model("TableBooking", TableBookingSchema);

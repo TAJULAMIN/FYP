@@ -120,20 +120,34 @@ app.listen(PORT, () => {
 });
 
 
-// Run every hour (or daily)
+// Run every hour
 setInterval(async () => {
   try {
     const now = new Date();
 
-    // Delete all bookings where the date is **before now**
-    const result = await TableBooking.deleteMany({
-      date: { $lt: now } // booking date already passed
-    });
+    // Mark expired bookings
+    const result = await TableBooking.updateMany(
+      { date: { $lt: now }, status: "active" },
+      { $set: { status: "expired" } }
+    );
 
-    if (result.deletedCount > 0) {
-      console.log(`Deleted ${result.deletedCount} past bookings.`);
+    if (result.modifiedCount > 0) {
+      console.log(`Marked ${result.modifiedCount} bookings as expired.`);
+
+      // Optional: free up tables for expired bookings
+      const expiredBookings = await TableBooking.find({
+        date: { $lt: now },
+        status: "expired",
+      });
+
+      for (const booking of expiredBookings) {
+        await Table.updateOne(
+          { tableNumber: booking.tableNumber },
+          { $set: { status: "available" } }
+        );
+      }
     }
   } catch (err) {
-    console.error("Error deleting past bookings:", err);
+    console.error("Error marking expired bookings:", err);
   }
-}, 1000 * 60 * 60); // every hour    delte the documents after one hour
+}, 1000 * 60 * 60); // every hour
