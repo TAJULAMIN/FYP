@@ -38,21 +38,27 @@ const TablesListPage = () => {
       <Grid container spacing={3}>
         {tables.map((table) => (
           <Grid item xs={12} sm={6} md={4} key={table._id}>
-            <Paper
-              sx={{
-                p: 3,
-                borderRadius: "12px",
-                cursor: table.status === "available" ? "pointer" : "not-allowed",
-                border: table.status === "booked" ? "2px solid red" : "2px solid green",
-                backgroundColor: table.status === "booked" ? "#ffe6e6" : "#e6ffe6",
-                position: "relative",
-                opacity: table.status === "booked" ? 0.7 : 1,
-              }}
-              onClick={() =>
-                table.status === "available" &&
-                navigate(`/tables/${table._id}/menu`, { state: { tableNumber: table.tableNumber } })
-              }
-            >
+
+
+            
+        <Paper
+  sx={{
+    p: 3,
+    borderRadius: "12px",
+    cursor: "pointer", // ✅ always clickable
+    border: table.status === "booked" ? "2px solid red" : "2px solid green",
+    backgroundColor: table.status === "booked" ? "#ffe6e6" : "#e6ffe6",
+    position: "relative",
+    opacity: table.status === "booked" ? 0.7 : 1,
+  }}
+  
+  onClick={() =>
+    navigate(`/tables/${table._id}/menu`, { state: { tableNumber: table.tableNumber } })
+    
+  }
+  
+>
+
               {/* Status Badge */}
               <Box
                 sx={{
@@ -82,6 +88,19 @@ const TablesListPage = () => {
               <Typography variant="body1" sx={{ fontWeight: "bold" }}>
                 Capacity: {table.capacity}
               </Typography>
+  
+
+{/* ✅ Show message if booked */}
+{table.status === "booked" && (
+  <Typography
+    variant="caption"
+    sx={{ color: "red", fontStyle: "italic", mt: 1, display: "block" }}
+  >
+    This table is currently booked.  
+    You can reserve it for a later time/date.
+  </Typography>
+)}
+
             </Paper>
           </Grid>
         ))}
