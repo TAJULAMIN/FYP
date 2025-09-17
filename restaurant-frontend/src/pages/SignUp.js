@@ -6,15 +6,13 @@ import { Link, useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast, ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
-import { useAuth } from "../Context/AuthContext"; // ✅ import AuthContext
+import { useAuth } from "../Context/AuthContext";
 
-// Slide-in animation
 const slideIn = keyframes`
   from { transform: translateX(-100%); opacity: 0; }
   to { transform: translateX(0); opacity: 1; }
 `;
 
-// Background styling
 const BackgroundBox = styled(Box)(({ theme }) => ({
   backgroundImage: `url(${require("../assets/book1.jpg")})`,
   backgroundSize: "cover",
@@ -30,7 +28,6 @@ const BackgroundBox = styled(Box)(({ theme }) => ({
   padding: theme.spacing(3),
 }));
 
-// Form container styling
 const FormContainer = styled(Box)(({ theme }) => ({
   backgroundColor: "rgba(255, 255, 255, 0.9)",
   borderRadius: theme.shape.borderRadius * 2,
@@ -47,48 +44,73 @@ export default function SignUp() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
-  const { login } = useAuth(); // ✅ get login function from context
+  const [errors, setErrors] = useState({});
+  const { login } = useAuth();
   const navigate = useNavigate();
 
-const handleSubmit = async (e) => {
-  e.preventDefault();
+  const validateEmail = (email) => /\S+@\S+\.\S+/.test(email);
 
-  if (password !== confirmPassword) {
-    toast.error("Passwords do not match ❌");
-    return;
-  }
+  // 🔹 Field-level validation
+  const validateField = (field, value) => {
+    let message = "";
 
-  try {
-    const res = await axios.post("http://localhost:5000/api/auth/signup", {
-      username: name,
-      email,
-      password,
-    });
+    switch (field) {
+     case "name":
+         if (!value.trim()) message = "Full Name is required";
+        else if (value.length < 5) message = "Full Name must be at least 5 characters";
+        else if (!/^[A-Za-z\s]+$/.test(value)) message = "Name can only contain letters and spaces";
+        break;
 
-    // Save token & user
-    localStorage.setItem("token", res.data.token);
-    localStorage.setItem("user", JSON.stringify(res.data.user));
+      case "email":
+        if (!value.trim()) message = "Email is required";
+        else if (!validateEmail(value)) message = "Enter a valid email";
+        break;
+      case "password":
+        if (!value) message = "Password is required";
+        else if (value.length < 6)
+          message = "Password must be at least 6 characters";
+        break;
+      case "confirmPassword":
+        if (value !== password) message = "Passwords do not match ❌";
+        break;
+      default:
+        break;
+    }
 
-    // Show auto-close toast
-    toast.success("User registered & logged in 🎉", {
-      position: "top-right",
-      autoClose: 3000, // closes after 3 seconds
-      hideProgressBar: false,
-      closeOnClick: true,
-      pauseOnHover: true,
-      draggable: true,
-      progress: undefined,
-    });
-  // ✅ Update global AuthContext
+    setErrors((prev) => ({ ...prev, [field]: message }));
+    return message === "";
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+
+    // Run validation for all fields
+    const valid =
+      validateField("name", name) &
+      validateField("email", email) &
+      validateField("password", password) &
+      validateField("confirmPassword", confirmPassword);
+
+    if (!valid) return;
+
+    try {
+      const res = await axios.post("http://localhost:5000/api/auth/signup", {
+        username: name,
+        email,
+        password,
+      });
+
+      localStorage.setItem("token", res.data.token);
+      localStorage.setItem("user", JSON.stringify(res.data.user));
+
+      toast.success("User registered & logged in 🎉", { autoClose: 3000 });
       login(res.data.user, res.data.token);
-    // Redirect after a short delay so toast is visible
-    setTimeout(() => navigate("/"), 1500);
-
-  } catch (err) {
-    console.error("Signup error:", err.response?.data || err.message);
-    toast.error(err.response?.data?.msg || "Signup failed ❌");
-  }
-};
+      setTimeout(() => navigate("/"), 1500);
+    } catch (err) {
+      console.error("Signup error:", err.response?.data || err.message);
+      toast.error(err.response?.data?.msg || "Signup failed ❌");
+    }
+  };
 
   return (
     <BackgroundBox>
@@ -110,6 +132,9 @@ const handleSubmit = async (e) => {
           margin="normal"
           value={name}
           onChange={(e) => setName(e.target.value)}
+          onBlur={() => validateField("name", name)}
+          error={!!errors.name}
+          helperText={errors.name}
         />
 
         <TextField
@@ -119,6 +144,9 @@ const handleSubmit = async (e) => {
           margin="normal"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
+          onBlur={() => validateField("email", email)}
+          error={!!errors.email}
+          helperText={errors.email}
         />
 
         <TextField
@@ -129,6 +157,9 @@ const handleSubmit = async (e) => {
           margin="normal"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          onBlur={() => validateField("password", password)}
+          error={!!errors.password}
+          helperText={errors.password}
         />
 
         <TextField
@@ -139,6 +170,9 @@ const handleSubmit = async (e) => {
           margin="normal"
           value={confirmPassword}
           onChange={(e) => setConfirmPassword(e.target.value)}
+          onBlur={() => validateField("confirmPassword", confirmPassword)}
+          error={!!errors.confirmPassword}
+          helperText={errors.confirmPassword}
         />
 
         <Button
