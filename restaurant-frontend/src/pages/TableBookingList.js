@@ -156,33 +156,43 @@ const TableBookingList = () => {
               </td>
               <td>{new Date(b.createdAt).toLocaleString()}</td>
               <td>
-                {user && user.role === "admin" && (
-                  <Button
-                    variant="contained"
-                    sx={{
-                      backgroundColor: "#FFA500",
-                      color: "white",
-                      "&:hover": { backgroundColor: "#E68900" },
-                      marginRight: "5px",
-                    }}
-                    onClick={() => handleEdit(b)}
-                  >
-                    Edit
-                  </Button>
-                )}
+  <div
+    style={{
+      display: "flex",
+      flexDirection: "row",
+      flexWrap: "wrap",
+      gap: "8px", // spacing between buttons
+      justifyContent: "center", // center them in the cell
+    }}
+  >
+    {user && user.role === "admin" && (
+      <Button
+        variant="contained"
+        sx={{
+          backgroundColor: "#FFA500",
+          color: "white",
+          "&:hover": { backgroundColor: "#E68900" },
+        }}
+        onClick={() => handleEdit(b)}
+      >
+        Edit
+      </Button>
+    )}
 
-                <Button
-                  variant="contained"
-                  sx={{
-                    backgroundColor: "#FF5722",
-                    color: "white",
-                    "&:hover": { backgroundColor: "#E64A19" },
-                  }}
-                  onClick={() => handleDelete(b._id)}
-                >
-                  Delete
-                </Button>
-              </td>
+    <Button
+      variant="contained"
+      sx={{
+        backgroundColor: "#FF5722",
+        color: "white",
+        "&:hover": { backgroundColor: "#E64A19" },
+      }}
+      onClick={() => handleDelete(b._id)}
+    >
+      Delete
+    </Button>
+  </div>
+</td>
+
             </tr>
           ))}
         </tbody>
