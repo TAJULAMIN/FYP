@@ -33,7 +33,8 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 app.use("/api/bookings", bookTableRoutes);
 
-
+// API Routes
+app.use('/api/book-table', bookTableRoutes);
 
 // Items / Menu
 const menuRoutes = require("./routes/items");  // your existing menu/item routes
@@ -51,12 +52,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 
 
-// Fetch data
-async function fetchBookings() {
-  const bookings = await TableBooking.find();
-  // console.log(bookings);
-}
-fetchBookings();
+
 
 // Route for Booking list
 app.get("/api/bookings", async (req, res) => {
@@ -111,9 +107,17 @@ mongoose.connect(process.env.MONGO_URI)
     console.error('❌ Error connecting to MongoDB:', err);
   });
 
-// API Routes
-app.use('/api/book-table', bookTableRoutes);
 
+
+
+
+
+  // Fetch data
+async function fetchBookings() {
+  const bookings = await TableBooking.find();
+  // console.log(bookings);
+}
+fetchBookings();
 // Start server
 app.listen(PORT, () => {
   console.log(`🚀 Server is running on port ${PORT}`);
