@@ -5,6 +5,7 @@ const cors = require('cors');
 const router = express.Router();
 const path = require("path");
 const tableRoutes = require("./routes/TableRoute");
+const Table = require('./models/Table');
 
 require('dotenv').config();
 
@@ -98,17 +99,29 @@ app.put("/api/bookings/:id", async (req, res) => {
 
 
 // Connect to MongoDB
-mongoose.connect(process.env.MONGO_URI)
-  .then(() => {
-    console.log('✅ MongoDB connected');
-  })
-   
-  .catch((err) => {
-    console.error('❌ Error connecting to MongoDB:', err);
-  });
+const startServer = async () => {
+  try {
+    await mongoose.connect(process.env.MONGO_URI, {
+      useNewUrlParser: true,
+      useUnifiedTopology: true,
+      serverSelectionTimeoutMS: 10000, // 10s
+    });
+    console.log("✅ MongoDB connected");
 
 
+    // ✅ Safe to query after connection
+    await fetchBookings();
 
+    app.listen(PORT, () => {
+      console.log(`🚀 Server is running on port ${PORT}`);
+    });
+  } catch (err) {
+    console.error("❌ MongoDB connection error:", err.message);
+    process.exit(1);
+  }
+};
+
+startServer();
 
 
 
@@ -117,11 +130,6 @@ async function fetchBookings() {
   const bookings = await TableBooking.find();
   // console.log(bookings);
 }
-fetchBookings();
-// Start server
-app.listen(PORT, () => {
-  console.log(`🚀 Server is running on port ${PORT}`);
-});
 
 
 // Run every hour
